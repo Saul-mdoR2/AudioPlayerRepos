@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Audio Player</string>
+    <string name="txt_total_audios">Total de audios:</string>
+    <string name="txt_unknown">Desconocido</string>
+</resources>
