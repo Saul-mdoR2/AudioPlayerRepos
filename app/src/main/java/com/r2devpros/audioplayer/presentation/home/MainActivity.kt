@@ -1,12 +1,22 @@
 @file:Suppress("DEPRECATION")
+
 package com.r2devpros.audioplayer.presentation.home
 
 import android.Manifest
 import android.app.Activity
+import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
+import android.provider.Settings
+import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,9 +29,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.ui.PlayerNotificationManager
+import com.google.android.material.snackbar.Snackbar
 import com.r2devpros.audioplayer.R
 import com.r2devpros.audioplayer.databinding.ActivityMainBinding
 import com.r2devpros.audioplayer.utils.FilesHelper
+import com.r2devpros.audioplayer.utils.PlayerNotificationService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +48,13 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionCode = 100
     private var audios = arrayListOf<DocumentFile>()
     private val exoPlayer by lazy { ExoPlayer.Builder(this).build() }
+
+    //region NOTIFICATION
+    private lateinit var playerNotificationManager: PlayerNotificationManager
+    private var notificationId = 1000
+    private var channelId = "com.r2devpros.audioPlayer.CHANNEL_01"
+    private lateinit var mediaSession: MediaSessionCompat
+    //endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Timber.d("MainActivity_TAG: onCreate: ")
@@ -53,6 +75,8 @@ class MainActivity : AppCompatActivity() {
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
                 exoPlayer.play()
+
+                convertAudios()
             }
         }
 
@@ -62,7 +86,137 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //region NOTIFICATION
+    private fun convertAudios() {
+        Timber.d("MainActivity_TAG: convertAudios: ")
+        val mediaItems = audios.map { file ->
+            MediaItem.fromUri(file.uri)
+        }
+
+        exoPlayer.addMediaItems(mediaItems)
+        exoPlayer.playWhenReady = true
+
+        createMediaSession()
+
+        exoPlayer.prepare()
+        exoPlayer.play()
+    }
+
+    private fun createMediaSession() {
+        Timber.d("MainActivity_TAG: createMediaSession: ")
+        mediaSession = MediaSessionCompat(this, packageName)
+        val mediaSessionConnector = MediaSessionConnector(mediaSession)
+        mediaSessionConnector.setPlayer(exoPlayer)
+        mediaSession.isActive = true
+    }
+
+    private fun initNotification() {
+        Timber.d("MainActivity_TAG: initNotification: ")
+        validateNotificationPermission()
+
+        val mediaDescriptionAdapter = object : PlayerNotificationManager.MediaDescriptionAdapter {
+            override fun createCurrentContentIntent(player: Player): PendingIntent? {
+                // Customize this if you want to open an activity when the notification is clicked
+                return null
+            }
+
+            override fun getCurrentContentText(player: Player): String {
+                // Customize the notification text (e.g., current audio title)
+//                return "Now playing: ${audios[player.currentWindowIndex].name}"
+                return "Now playing: 'TITLE OF THE SONG'"
+            }
+
+            override fun getCurrentContentTitle(player: Player): String {
+                // Customize the notification title (e.g., app name)
+                return getString(R.string.app_name)
+            }
+
+            override fun getCurrentLargeIcon(
+                player: Player,
+                callback: PlayerNotificationManager.BitmapCallback
+            ): Bitmap? {
+                // Customize the large icon for the notification
+                // Example: load an icon from resources
+                return BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+            }
+        }
+
+        playerNotificationManager = PlayerNotificationManager.Builder(
+            this,
+            notificationId,
+            channelId,
+            mediaDescriptionAdapter
+        ).build()
+
+        playerNotificationManager.setPlayer(exoPlayer)
+    }
+    //endregion
+
     //region PERMISSIONS VALIDATION
+    private fun validateNotificationPermission() {
+        Timber.d("MainActivity_TAG: validateNotificationPermission: ")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED -> {
+                    Toast.makeText(this, "YOU CAN SHOW NOTIFICATION", Toast.LENGTH_LONG).show()
+                }
+
+                shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
+                    Snackbar.make(
+                        layout.containerMain,
+                        "Notification blocked",
+                        Snackbar.LENGTH_LONG
+                    ).setAction("Settings") {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        val uri: Uri = Uri.fromParts("package", packageName, null)
+                        intent.data = uri
+                        startActivity(intent)
+                    }.show()
+                }
+
+                else -> {
+                    requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+
+            }
+
+        }
+    }
+
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(this, "Notifications permission granted", Toast.LENGTH_SHORT)
+                .show()
+        } else {
+//            Toast.makeText(
+//                this, "${getString(R.string.app_name)} can't post notifications without Notification permission",
+//                Toast.LENGTH_LONG
+//            ).show()
+
+            Snackbar.make(
+                layout.containerMain,
+                String.format(
+                    String.format(
+                        getString(R.string.txt_error_post_notification),
+                        getString(R.string.app_name)
+                    )
+                ),
+                Snackbar.LENGTH_INDEFINITE
+            ).setAction(getString(R.string.goto_settings)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val settingsIntent: Intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                    startActivity(settingsIntent)
+                }
+            }.show()
+        }
+    }
+
     private fun validatePermissions() {
         Timber.d("MainActivity_TAG: validatePermissions: ")
         val permission =
@@ -176,6 +330,8 @@ class MainActivity : AppCompatActivity() {
             }.sortedBy { it.name }
             audiosAdapter.itemList = items
             layout.pbLoading.visibility = View.GONE
+            createMediaSession()
+            initNotification()
         }
     }
 
