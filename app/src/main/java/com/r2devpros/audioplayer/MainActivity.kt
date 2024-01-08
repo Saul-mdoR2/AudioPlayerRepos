@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.r2devpros.audioplayer
 
 import android.Manifest
@@ -14,10 +16,11 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.documentfile.provider.DocumentFile
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import com.r2devpros.audioplayer.audiosAdapter.AudioItemViewModel
 import com.r2devpros.audioplayer.audiosAdapter.AudiosRVAdapter
 import com.r2devpros.audioplayer.databinding.ActivityMainBinding
@@ -34,6 +37,29 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionCode = 100
     private var audios = arrayListOf<DocumentFile>()
     private val exoPlayer by lazy { ExoPlayer.Builder(this).build() }
+
+    private lateinit var playerNotificationManager: PlayerNotificationManager
+    private var notificationId = 12345
+    private var channelId = "com.r2devpros.audioplayer.CHANNEL_01"
+
+//    private lateinit var mService: PlayerNotificationService
+//    private var mBound: Boolean = false
+//    private lateinit var mediaSession: MediaSessionCompat
+//
+//    private val connection = object : ServiceConnection {
+//        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+//            val binder = service as PlayerNotificationService.VideoServiceBinder
+//            mService = binder.getService()
+//            exoPlayer = binder.getExoPlayerInstance()
+//
+//            mBound = true
+//        }
+//
+//        override fun onServiceDisconnected(name: ComponentName?) {
+//            mBound = false
+//        }
+//
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Timber.d("MainActivity_TAG: onCreate: ")

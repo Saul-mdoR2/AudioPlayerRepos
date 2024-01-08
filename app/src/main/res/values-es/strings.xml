@@ -3,4 +3,7 @@
     <string name="app_name">Audio Player</string>
     <string name="txt_total_audios">Total de audios:</string>
     <string name="txt_unknown">Desconocido</string>
+
+    <string name="channel_name">Channel Name</string>
+    <string name="channel_description">Channel Description</string>
 </resources>
