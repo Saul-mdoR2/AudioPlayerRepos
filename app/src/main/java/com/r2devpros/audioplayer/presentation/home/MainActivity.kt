@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION")
 package com.r2devpros.audioplayer.presentation.home
 
 import android.Manifest
@@ -14,10 +15,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.documentfile.provider.DocumentFile
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
 import com.r2devpros.audioplayer.R
 import com.r2devpros.audioplayer.databinding.ActivityMainBinding
 import com.r2devpros.audioplayer.utils.FilesHelper
@@ -51,7 +52,6 @@ class MainActivity : AppCompatActivity() {
             if (mediaItem != null) {
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
-//                layout.playerView.visibility = View.VISIBLE
                 exoPlayer.play()
             }
         }
