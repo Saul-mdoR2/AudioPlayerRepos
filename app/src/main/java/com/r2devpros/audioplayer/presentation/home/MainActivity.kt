@@ -1,4 +1,4 @@
-package com.r2devpros.audioplayer
+package com.r2devpros.audioplayer.presentation.home
 
 import android.Manifest
 import android.app.Activity
@@ -18,8 +18,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.r2devpros.audioplayer.audiosAdapter.AudioItemViewModel
-import com.r2devpros.audioplayer.audiosAdapter.AudiosRVAdapter
+import com.r2devpros.audioplayer.R
 import com.r2devpros.audioplayer.databinding.ActivityMainBinding
 import com.r2devpros.audioplayer.utils.FilesHelper
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +27,6 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var layout: ActivityMainBinding
     private lateinit var audiosAdapter: AudiosRVAdapter
     private val requestPermissionCode = 100
@@ -48,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private fun initRecyclerView() {
         Timber.d("MainActivity_TAG: initRecyclerView: ")
         audiosAdapter = AudiosRVAdapter { item ->
+            Timber.d("MainActivity_TAG: onAudioClicked: ${item.name}")
             val mediaItem = item.file?.uri?.let { MediaItem.fromUri(it) }
             if (mediaItem != null) {
                 exoPlayer.setMediaItem(mediaItem)

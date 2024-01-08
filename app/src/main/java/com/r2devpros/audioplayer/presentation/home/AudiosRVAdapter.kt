@@ -1,4 +1,4 @@
-package com.r2devpros.audioplayer.audiosAdapter
+package com.r2devpros.audioplayer.presentation.home
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
@@ -31,7 +31,6 @@ class AudiosRVAdapter(private val audioClicked: (AudioItemViewModel) -> Unit) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        Timber.d("AudiosRVAdapter_TAG: onCreateViewHolder: ")
         val binding: AudioItemLayoutBinding = DataBindingUtil.inflate(
             LayoutInflater.from(parent.context),
             R.layout.audio_item_layout,
@@ -44,7 +43,6 @@ class AudiosRVAdapter(private val audioClicked: (AudioItemViewModel) -> Unit) :
     override fun getItemCount(): Int = itemList.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        Timber.d("AudiosRVAdapter_TAG: onBindViewHolder: ")
         val audioFile = itemList[position]
         holder.layout.setVariable(BR.viewModel, audioFile)
         holder.bind(audioFile)

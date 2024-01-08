@@ -7,7 +7,7 @@
 
         <variable
             name="viewModel"
-            type="com.r2devpros.audioplayer.audiosAdapter.AudioItemViewModel" />
+            type="com.r2devpros.audioplayer.presentation.home.AudioItemViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -61,7 +61,7 @@
                 android:text="@{viewModel.duration}"
                 android:textColor="#546E7A"
                 android:textSize="14sp"
-                tools:text="3:28" />
+                tools:text="03:28" />
 
         </LinearLayout>
 

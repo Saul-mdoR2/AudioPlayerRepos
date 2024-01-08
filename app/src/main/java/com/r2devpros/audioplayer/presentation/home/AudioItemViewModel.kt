@@ -1,4 +1,4 @@
-package com.r2devpros.audioplayer.audiosAdapter
+package com.r2devpros.audioplayer.presentation.home
 
 import android.graphics.Bitmap
 import androidx.documentfile.provider.DocumentFile
@@ -10,7 +10,7 @@ class AudioItemViewModel {
     val name: String
         get() = FormatUtils.formatFileName(file?.name)
 
-    var duration: String = "0:00"
+    var duration: String = "00:00"
 
     var author: String = "---"
 
