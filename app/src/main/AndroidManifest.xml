@@ -6,8 +6,6 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
         android:name=".core.MyApp"
@@ -29,10 +27,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name="com.r2devpros.audioplayer.utils.PlayerNotificationService"
-            android:foregroundServiceType="mediaPlayback"
-            android:stopWithTask="true" />
     </application>
+
 </manifest>
