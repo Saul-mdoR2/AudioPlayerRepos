@@ -6,7 +6,7 @@
     <data>
         <variable
             name="viewModel"
-            type="" />
+            type="com.r2devpros.audioplayer.presentation.home.HomeViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
