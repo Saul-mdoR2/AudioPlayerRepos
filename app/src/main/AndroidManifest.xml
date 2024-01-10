@@ -32,11 +32,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name="com.r2devpros.audioplayer.utils.PlayerNotificationService"
-            android:foregroundServiceType="mediaPlayback"
-            android:stopWithTask="true" />
     </application>
 
 </manifest>

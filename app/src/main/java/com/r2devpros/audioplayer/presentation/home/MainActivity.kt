@@ -4,39 +4,37 @@ package com.r2devpros.audioplayer.presentation.home
 
 import android.Manifest
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import android.provider.Settings
-import android.support.v4.media.session.MediaSessionCompat
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.documentfile.provider.DocumentFile
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
+import androidx.media3.ui.PlayerNotificationManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
-import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import com.google.android.material.snackbar.Snackbar
 import com.r2devpros.audioplayer.R
 import com.r2devpros.audioplayer.databinding.ActivityMainBinding
 import com.r2devpros.audioplayer.utils.FilesHelper
-import com.r2devpros.audioplayer.utils.PlayerNotificationService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -53,7 +51,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var playerNotificationManager: PlayerNotificationManager
     private var notificationId = 1000
     private var channelId = "com.r2devpros.audioPlayer.CHANNEL_01"
-    private lateinit var mediaSession: MediaSessionCompat
     //endregion
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,7 +59,6 @@ class MainActivity : AppCompatActivity() {
         layout = DataBindingUtil.setContentView(this, R.layout.activity_main)
         layout.lifecycleOwner = this
         initRecyclerView()
-//        layout.playerView.player = exoPlayer
         validatePermissions()
     }
 
@@ -89,66 +85,78 @@ class MainActivity : AppCompatActivity() {
     //region NOTIFICATION
     private fun convertAudios() {
         Timber.d("MainActivity_TAG: convertAudios: ")
-        val mediaItems = audios.map { file ->
+        val aud = audios.sortedBy { it.name }
+        val mediaItems = aud.map { file ->
             MediaItem.fromUri(file.uri)
         }
 
         exoPlayer.addMediaItems(mediaItems)
         exoPlayer.playWhenReady = true
 
-        createMediaSession()
+//        createMediaSession()
 
         exoPlayer.prepare()
         exoPlayer.play()
     }
 
-    private fun createMediaSession() {
-        Timber.d("MainActivity_TAG: createMediaSession: ")
-        mediaSession = MediaSessionCompat(this, packageName)
-        val mediaSessionConnector = MediaSessionConnector(mediaSession)
-        mediaSessionConnector.setPlayer(exoPlayer)
-        mediaSession.isActive = true
-    }
+//    private fun createMediaSession() {
+//        Timber.d("MainActivity_TAG: createMediaSession: ")
+//       val mediaSession = MediaSession.Builder(this, exoPlayer).build()
+//        mediaSession.player = exoPlayer
+//    }
 
+    @OptIn(UnstableApi::class)
     private fun initNotification() {
         Timber.d("MainActivity_TAG: initNotification: ")
         validateNotificationPermission()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "Audio Player Channel",
+                    NotificationManager.IMPORTANCE_LOW
+                )
 
-        val mediaDescriptionAdapter = object : PlayerNotificationManager.MediaDescriptionAdapter {
-            override fun createCurrentContentIntent(player: Player): PendingIntent? {
-                // Customize this if you want to open an activity when the notification is clicked
-                return null
+                val notificationManager = getSystemService(NotificationManager::class.java)
+                notificationManager.createNotificationChannel(channel)
             }
 
-            override fun getCurrentContentText(player: Player): String {
-                // Customize the notification text (e.g., current audio title)
-//                return "Now playing: ${audios[player.currentWindowIndex].name}"
-                return "Now playing: 'TITLE OF THE SONG'"
-            }
+            val mediaDescriptionAdapter =
+                object : PlayerNotificationManager.MediaDescriptionAdapter {
+                    override fun createCurrentContentIntent(player: Player): PendingIntent? {
+                        return null
+                    }
 
-            override fun getCurrentContentTitle(player: Player): String {
-                // Customize the notification title (e.g., app name)
-                return getString(R.string.app_name)
-            }
+                    override fun getCurrentContentText(player: Player): String {
+                        return "SONG NAME"
+                    }
 
-            override fun getCurrentLargeIcon(
-                player: Player,
-                callback: PlayerNotificationManager.BitmapCallback
-            ): Bitmap? {
-                // Customize the large icon for the notification
-                // Example: load an icon from resources
-                return BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
-            }
+                    override fun getCurrentContentTitle(player: Player): String {
+                        return getString(R.string.app_name)
+                    }
+
+                    override fun getCurrentLargeIcon(
+                        player: Player,
+                        callback: PlayerNotificationManager.BitmapCallback
+                    ): Bitmap? {
+                        // Customize the large icon for the notification
+                        // Example: load an icon from resources
+//                return BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+                        return null
+                    }
+                }
+
+            playerNotificationManager = PlayerNotificationManager.Builder(
+                this,
+                notificationId,
+                channelId,
+                mediaDescriptionAdapter
+            ).build()
+
+            playerNotificationManager.setPlayer(exoPlayer)
+        } catch (e: Exception) {
+            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
         }
-
-        playerNotificationManager = PlayerNotificationManager.Builder(
-            this,
-            notificationId,
-            channelId,
-            mediaDescriptionAdapter
-        ).build()
-
-        playerNotificationManager.setPlayer(exoPlayer)
     }
     //endregion
 
@@ -330,7 +338,7 @@ class MainActivity : AppCompatActivity() {
             }.sortedBy { it.name }
             audiosAdapter.itemList = items
             layout.pbLoading.visibility = View.GONE
-            createMediaSession()
+//            createMediaSession()
             initNotification()
         }
     }
